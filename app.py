@@ -13,19 +13,93 @@ from utils import save_video, ensure_dir, get_timestamp
 videos_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "videos")
 ensure_dir(videos_dir)
 
+# Modern UI color scheme
+COLORS = {
+    "primary": "#4361EE",     # Primary accent color
+    "secondary": "#3F37C9",   # Secondary accent color
+    "accent": "#4CC9F0",      # Highlights
+    "light": "#F8F9FA",       # Light background
+    "dark": "#212529",        # Dark text
+    "success": "#4CAF50",     # Success color
+    "warning": "#FF9800",     # Warning color
+    "error": "#F44336",       # Error color
+    "light_accent": "#E9ECEF", # Light accent for card backgrounds
+    "border": "#DEE2E6"       # Border color
+}
+
+class ModernButton(tk.Button):
+    """A modern styled button with hover effects"""
+    def __init__(self, master=None, **kwargs):
+        self.bg_color = kwargs.pop('bg', COLORS["primary"])
+        self.hover_color = kwargs.pop('hover_color', COLORS["secondary"])
+        self.fg_color = kwargs.pop('fg', "white")
+        
+        # Set modern styling
+        kwargs['bg'] = self.bg_color
+        kwargs['fg'] = self.fg_color
+        kwargs['relief'] = tk.FLAT
+        kwargs['borderwidth'] = 0
+        kwargs['padx'] = 15
+        kwargs['pady'] = 8
+        kwargs['font'] = ('Helvetica', 10, 'bold')
+        
+        super().__init__(master, **kwargs)
+        
+        # Configure hover events
+        self.bind("<Enter>", self._on_enter)
+        self.bind("<Leave>", self._on_leave)
+    
+    def _on_enter(self, e):
+        self.config(bg=self.hover_color)
+    
+    def _on_leave(self, e):
+        self.config(bg=self.bg_color)
+
+class ModernFrame(tk.Frame):
+    """A modern frame with optional shadow effect"""
+    def __init__(self, master=None, has_shadow=False, **kwargs):
+        bg_color = kwargs.pop('bg', COLORS["light"])
+        kwargs['bg'] = bg_color
+        
+        if 'padx' not in kwargs:
+            kwargs['padx'] = 15
+        
+        if 'pady' not in kwargs:
+            kwargs['pady'] = 15
+        
+        if 'relief' not in kwargs and has_shadow:
+            kwargs['relief'] = tk.RAISED
+            kwargs['borderwidth'] = 1
+        
+        super().__init__(master, **kwargs)
+
 class EmotionalJournalApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Emotional Journal")
-        self.root.geometry("800x600")
-        self.root.minsize(800, 600)
-        self.root.configure(bg="#f0f0f0")
+        self.root.geometry("900x700")
+        self.root.minsize(900, 700)
+        self.root.configure(bg=COLORS["light"])
+        
+        # Apply a modern look to Ttk widgets
+        self.style = ttk.Style()
+        self.style.theme_use('clam')  # Use clam theme as base
+        
+        # Configure combobox style
+        self.style.configure('TCombobox', 
+                            fieldbackground=COLORS["light"],
+                            background=COLORS["light_accent"])
+        
+        # Configure scrollbar style
+        self.style.configure('TScrollbar',
+                           troughcolor=COLORS["light"], 
+                           background=COLORS["primary"])
         
         # Create frames for each "screen"
-        self.main_frame = tk.Frame(root, bg="#f0f0f0")
-        self.record_frame = tk.Frame(root, bg="#f0f0f0")
-        self.history_frame = tk.Frame(root, bg="#f0f0f0")
-        self.playback_frame = tk.Frame(root, bg="#f0f0f0")
+        self.main_frame = ModernFrame(root, bg=COLORS["light"])
+        self.record_frame = ModernFrame(root, bg=COLORS["light"])
+        self.history_frame = ModernFrame(root, bg=COLORS["light"])
+        self.playback_frame = ModernFrame(root, bg=COLORS["light"])
         
         # Variables for recording
         self.recording = False
@@ -60,7 +134,6 @@ class EmotionalJournalApp:
         self.emotion_var.set("Happy")
         self.journal_text.delete("1.0", tk.END)
         self.frames = []
-        self.preview_label.config(image="")
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
         self.save_button.config(state=tk.DISABLED)
@@ -80,7 +153,6 @@ class EmotionalJournalApp:
             self.playback_title.config(text=f"Playing: {title}")
             
             # For simplicity, we'll open the video in the default video player
-            # as embedding video playback in Tkinter is complex
             if sys.platform == "win32":
                 os.startfile(video_path)
             else:
@@ -95,207 +167,390 @@ class EmotionalJournalApp:
     
     # Setup functions for each screen
     def setup_main_screen(self):
-        # Title and description
+        # Logo/icon at the top
+        logo_frame = ModernFrame(self.main_frame, bg=COLORS["light"])
+        logo_frame.pack(pady=(40, 20))
+        
+        # Create a circle for the logo
+        logo_canvas = tk.Canvas(logo_frame, width=100, height=100, bg=COLORS["light"], highlightthickness=0)
+        logo_canvas.create_oval(10, 10, 90, 90, fill=COLORS["primary"], outline="")
+        logo_canvas.create_text(50, 50, text="EJ", font=("Helvetica", 36, "bold"), fill="white")
+        logo_canvas.pack()
+        
+        # App title in a modern font
         title_label = tk.Label(
             self.main_frame, 
             text="Emotional Journal",
-            font=("Helvetica", 24, "bold"),
-            bg="#f0f0f0",
-            pady=20
+            font=("Helvetica", 28, "bold"),
+            bg=COLORS["light"],
+            fg=COLORS["dark"],
+            pady=10
         )
         title_label.pack()
         
+        # Subtitle with app description
         description = tk.Label(
             self.main_frame,
-            text="Record your emotional state and journal your thoughts.",
+            text="Record your emotional state and journal your thoughts",
             font=("Helvetica", 12),
-            bg="#f0f0f0",
-            pady=10
+            bg=COLORS["light"],
+            fg=COLORS["dark"],
+            pady=5
         )
         description.pack()
         
-        # Buttons
-        button_frame = tk.Frame(self.main_frame, bg="#f0f0f0", pady=20)
-        button_frame.pack()
+        # Container for buttons with some space
+        button_container = ModernFrame(self.main_frame, bg=COLORS["light"], pady=40)
+        button_container.pack()
         
-        record_button = tk.Button(
-            button_frame,
+        # Record button with icon indicator
+        record_frame = ModernFrame(button_container, bg=COLORS["light"], pady=10)
+        record_frame.pack()
+        
+        record_icon = tk.Canvas(record_frame, width=24, height=24, bg=COLORS["light"], highlightthickness=0)
+        record_icon.create_oval(4, 4, 20, 20, fill=COLORS["error"], outline="")
+        record_icon.grid(row=0, column=0, padx=(0, 10))
+        
+        record_button = ModernButton(
+            record_frame,
             text="Record New Entry",
-            font=("Helvetica", 12),
             command=self.show_record_screen,
+            bg=COLORS["primary"],
+            hover_color=COLORS["secondary"],
             width=20,
-            height=2,
-            bg="#4CAF50",
-            fg="white"
         )
-        record_button.pack(pady=10)
+        record_button.grid(row=0, column=1)
         
-        view_button = tk.Button(
-            button_frame,
+        # History button with icon
+        history_frame = ModernFrame(button_container, bg=COLORS["light"], pady=10)
+        history_frame.pack()
+        
+        history_icon = tk.Canvas(history_frame, width=24, height=24, bg=COLORS["light"], highlightthickness=0)
+        history_icon.create_rectangle(4, 4, 20, 20, fill=COLORS["accent"], outline="")
+        history_icon.grid(row=0, column=0, padx=(0, 10))
+        
+        view_button = ModernButton(
+            history_frame,
             text="View Past Entries",
-            font=("Helvetica", 12),
             command=self.show_history_screen,
+            bg=COLORS["accent"],
+            hover_color=COLORS["secondary"],
             width=20,
-            height=2,
-            bg="#2196F3",
-            fg="white"
         )
-        view_button.pack(pady=10)
+        view_button.grid(row=0, column=1)
     
     def setup_record_screen(self):
-        # Title
-        title_label = tk.Label(
-            self.record_frame, 
-            text="Record a New Journal Entry",
-            font=("Helvetica", 18, "bold"),
-            bg="#f0f0f0",
-            pady=10
+        # Top navigation bar with title and back button
+        nav_bar = ModernFrame(self.record_frame, bg=COLORS["primary"], pady=10)
+        nav_bar.pack(fill=tk.X)
+        
+        back_btn = ModernButton(
+            nav_bar,
+            text="← Back",
+            command=self.show_main_screen,
+            bg=COLORS["primary"],
+            hover_color=COLORS["secondary"],
+            width=8
         )
-        title_label.pack()
+        back_btn.pack(side=tk.LEFT, padx=10)
         
-        # Form
-        form_frame = tk.Frame(self.record_frame, bg="#f0f0f0", padx=20)
-        form_frame.pack(fill=tk.X)
-        
-        # Title input
-        title_frame = tk.Frame(form_frame, bg="#f0f0f0")
-        title_frame.pack(fill=tk.X, pady=5)
-        
+        # Title in the navigation bar
         title_label = tk.Label(
-            title_frame, 
-            text="Entry Title (required):",
-            font=("Helvetica", 10),
-            bg="#f0f0f0",
-            width=20,
+            nav_bar, 
+            text="Record a New Journal Entry",
+            font=("Helvetica", 16, "bold"),
+            bg=COLORS["primary"],
+            fg="white",
+        )
+        title_label.pack(side=tk.LEFT, expand=True)
+        
+        # Content area with form
+        content_frame = ModernFrame(self.record_frame, bg=COLORS["light"], padx=30, pady=20)
+        content_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Form container with card-like appearance
+        form_card = ModernFrame(
+            content_frame, 
+            bg=COLORS["light_accent"], 
+            has_shadow=True,
+            padx=20,
+            pady=20
+        )
+        form_card.pack(fill=tk.BOTH, expand=True, pady=10)
+        
+        # Title input with label
+        title_label = tk.Label(
+            form_card, 
+            text="Title (required)",
+            font=("Helvetica", 12, "bold"),
+            bg=COLORS["light_accent"],
+            fg=COLORS["dark"],
             anchor="w"
         )
-        title_label.pack(side=tk.LEFT)
+        title_label.pack(anchor="w", pady=(0, 5))
         
-        self.title_entry = tk.Entry(title_frame, font=("Helvetica", 10), width=40)
-        self.title_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.title_entry = tk.Entry(
+            form_card, 
+            font=("Helvetica", 12),
+            bg="white",
+            relief=tk.FLAT,
+            highlightthickness=1,
+            highlightbackground=COLORS["border"],
+            highlightcolor=COLORS["primary"]
+        )
+        self.title_entry.pack(fill=tk.X, pady=(0, 15))
         
         # Emotion selection
-        emotion_frame = tk.Frame(form_frame, bg="#f0f0f0")
-        emotion_frame.pack(fill=tk.X, pady=5)
-        
         emotion_label = tk.Label(
-            emotion_frame, 
+            form_card, 
             text="How are you feeling?",
-            font=("Helvetica", 10),
-            bg="#f0f0f0",
-            width=20,
+            font=("Helvetica", 12, "bold"),
+            bg=COLORS["light_accent"],
+            fg=COLORS["dark"],
             anchor="w"
         )
-        emotion_label.pack(side=tk.LEFT)
+        emotion_label.pack(anchor="w", pady=(0, 5))
         
         self.emotion_var = tk.StringVar(value="Happy")
         emotions = ["Happy", "Sad", "Anxious", "Calm", "Angry", "Grateful", "Confused", "Other"]
-        emotion_menu = ttk.Combobox(
-            emotion_frame, 
-            textvariable=self.emotion_var,
-            values=emotions,
-            font=("Helvetica", 10),
-            width=38
-        )
-        emotion_menu.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        emotion_frame = ModernFrame(form_card, bg=COLORS["light_accent"], pady=0)
+        emotion_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        # Create a row of emotion buttons instead of a dropdown
+        for i, emotion in enumerate(emotions):
+            bg_color = COLORS["light"] if emotion != "Happy" else COLORS["primary"]
+            fg_color = COLORS["dark"] if emotion != "Happy" else "white"
+            
+            btn = tk.Button(
+                emotion_frame,
+                text=emotion,
+                bg=bg_color,
+                fg=fg_color,
+                relief=tk.FLAT,
+                bd=0,
+                padx=10,
+                pady=5,
+                font=("Helvetica", 10),
+                command=lambda e=emotion: self.select_emotion(e)
+            )
+            row = i // 4
+            col = i % 4
+            btn.grid(row=row, column=col, padx=5, pady=5, sticky="ew")
+        
+        for i in range(4):
+            emotion_frame.grid_columnconfigure(i, weight=1)
         
         # Journal text
         journal_label = tk.Label(
-            form_frame, 
-            text="Write your thoughts (optional):",
-            font=("Helvetica", 10),
-            bg="#f0f0f0",
+            form_card, 
+            text="Write your thoughts (optional)",
+            font=("Helvetica", 12, "bold"),
+            bg=COLORS["light_accent"],
+            fg=COLORS["dark"],
             anchor="w"
         )
-        journal_label.pack(anchor="w", pady=(10, 5))
+        journal_label.pack(anchor="w", pady=(0, 5))
         
         self.journal_text = scrolledtext.ScrolledText(
-            form_frame, 
-            font=("Helvetica", 10),
-            height=5
-        )
-        self.journal_text.pack(fill=tk.X, pady=(0, 10))
-        
-        # Preview
-        preview_label = tk.Label(
-            self.record_frame,
-            text="Camera Preview",
+            form_card, 
             font=("Helvetica", 12),
-            bg="#f0f0f0"
+            height=4,
+            relief=tk.FLAT,
+            bd=1,
+            bg="white"
         )
-        preview_label.pack(pady=(10, 5))
+        self.journal_text.pack(fill=tk.X, pady=(0, 15))
         
-        self.preview_label = tk.Label(self.record_frame, bg="black", height=15)
-        self.preview_label.pack(fill=tk.X, padx=20)
+        # Controls at the bottom
+        controls_card = ModernFrame(
+            content_frame, 
+            bg=COLORS["light_accent"], 
+            has_shadow=True,
+            padx=20,
+            pady=20
+        )
+        controls_card.pack(fill=tk.X, pady=10)
         
-        # Controls
-        controls_frame = tk.Frame(self.record_frame, bg="#f0f0f0", pady=10)
-        controls_frame.pack()
+        # Title for controls
+        controls_title = tk.Label(
+            controls_card,
+            text="Recording Controls",
+            font=("Helvetica", 14, "bold"),
+            bg=COLORS["light_accent"],
+            fg=COLORS["dark"],
+        )
+        controls_title.pack(pady=(0, 15))
         
-        self.start_button = tk.Button(
-            controls_frame,
-            text="Start Recording",
+        # Recording indicator
+        self.recording_indicator_frame = tk.Frame(controls_card, bg=COLORS["light_accent"])
+        self.recording_indicator_frame.pack(pady=(0, 15))
+        
+        self.recording_indicator = tk.Canvas(
+            self.recording_indicator_frame, 
+            width=20, 
+            height=20, 
+            bg=COLORS["light_accent"], 
+            highlightthickness=0
+        )
+        self.recording_indicator.create_oval(2, 2, 18, 18, fill="#cccccc", tags="indicator")
+        self.recording_indicator.pack(side=tk.LEFT, padx=(0, 10))
+        
+        self.recording_status = tk.Label(
+            self.recording_indicator_frame,
+            text="Not Recording",
             font=("Helvetica", 10),
+            bg=COLORS["light_accent"],
+            fg="#666666"
+        )
+        self.recording_status.pack(side=tk.LEFT)
+        
+        # Button controls in a row with larger buttons
+        button_frame = tk.Frame(controls_card, bg=COLORS["light_accent"])
+        button_frame.pack(fill=tk.X, pady=10)
+        
+        # Create a 3-column grid for buttons
+        button_frame.columnconfigure(0, weight=1)
+        button_frame.columnconfigure(1, weight=1)
+        button_frame.columnconfigure(2, weight=1)
+        
+        # Start recording button
+        self.start_button = ModernButton(
+            button_frame,
+            text="▶ START RECORDING",
             command=self.toggle_recording,
-            bg="#F44336",
-            fg="white",
-            width=15
+            bg=COLORS["error"],
+            hover_color="#D32F2F",
+            width=18,
+            font=('Helvetica', 12, 'bold'),
+            pady=12
         )
-        self.start_button.grid(row=0, column=0, padx=5)
+        self.start_button.grid(row=0, column=0, padx=10, pady=5, sticky="ew")
         
-        self.stop_button = tk.Button(
-            controls_frame,
-            text="Stop Recording",
-            font=("Helvetica", 10),
+        # Stop recording button
+        self.stop_button = ModernButton(
+            button_frame,
+            text="■ STOP RECORDING",
             command=self.stop_recording,
             state=tk.DISABLED,
-            width=15
+            bg=COLORS["warning"],
+            hover_color="#F57C00",
+            width=18,
+            font=('Helvetica', 12, 'bold'),
+            pady=12
         )
-        self.stop_button.grid(row=0, column=1, padx=5)
+        self.stop_button.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
         
-        self.save_button = tk.Button(
-            controls_frame,
-            text="Save",
-            font=("Helvetica", 10),
+        # Save button
+        self.save_button = ModernButton(
+            button_frame,
+            text="💾 SAVE JOURNAL",
             command=self.save_recording,
             state=tk.DISABLED,
-            bg="#4CAF50",
-            fg="white",
-            width=15
+            bg=COLORS["success"],
+            hover_color="#388E3C",
+            width=18,
+            font=('Helvetica', 12, 'bold'),
+            pady=12
         )
-        self.save_button.grid(row=0, column=2, padx=5)
+        self.save_button.grid(row=0, column=2, padx=10, pady=5, sticky="ew")
         
-        # Back button
-        back_frame = tk.Frame(self.record_frame, bg="#f0f0f0", pady=10)
-        back_frame.pack()
+        # Add tooltips/hints below buttons
+        hints_frame = tk.Frame(controls_card, bg=COLORS["light_accent"])
+        hints_frame.pack(fill=tk.X, pady=(0, 10))
         
-        back_button = tk.Button(
-            back_frame,
-            text="Back to Main",
-            font=("Helvetica", 10),
-            command=self.show_main_screen,
-            width=15
-        )
-        back_button.pack()
+        # Match the grid layout of the buttons
+        hints_frame.columnconfigure(0, weight=1)
+        hints_frame.columnconfigure(1, weight=1)
+        hints_frame.columnconfigure(2, weight=1)
+        
+        tk.Label(
+            hints_frame, 
+            text="Begin capturing video", 
+            font=("Helvetica", 9), 
+            fg="#666666",
+            bg=COLORS["light_accent"]
+        ).grid(row=0, column=0, padx=10)
+        
+        tk.Label(
+            hints_frame, 
+            text="End video recording", 
+            font=("Helvetica", 9), 
+            fg="#666666",
+            bg=COLORS["light_accent"]
+        ).grid(row=0, column=1, padx=10)
+        
+        tk.Label(
+            hints_frame, 
+            text="Store video and notes", 
+            font=("Helvetica", 9), 
+            fg="#666666",
+            bg=COLORS["light_accent"]
+        ).grid(row=0, column=2, padx=10)
+
+    def select_emotion(self, emotion):
+        """Update the selected emotion"""
+        self.emotion_var.set(emotion)
+        
+        # Update all emotion buttons
+        for widget in self.record_frame.winfo_children():
+            if isinstance(widget, ModernFrame):
+                for card in widget.winfo_children():
+                    if isinstance(card, ModernFrame) and card.winfo_children():
+                        for frame in card.winfo_children():
+                            if isinstance(frame, ModernFrame):
+                                for btn in frame.winfo_children():
+                                    if isinstance(btn, tk.Button) and btn.cget('text') in ["Happy", "Sad", "Anxious", "Calm", "Angry", "Grateful", "Confused", "Other"]:
+                                        if btn.cget('text') == emotion:
+                                            btn.config(bg=COLORS["primary"], fg="white")
+                                        else:
+                                            btn.config(bg=COLORS["light"], fg=COLORS["dark"])
     
     def setup_history_screen(self):
-        # Title
-        title_label = tk.Label(
-            self.history_frame, 
-            text="Journal History",
-            font=("Helvetica", 18, "bold"),
-            bg="#f0f0f0",
-            pady=10
+        # Top navigation bar with title and back button
+        nav_bar = ModernFrame(self.history_frame, bg=COLORS["primary"], pady=10)
+        nav_bar.pack(fill=tk.X)
+        
+        back_btn = ModernButton(
+            nav_bar,
+            text="← Back",
+            command=self.show_main_screen,
+            bg=COLORS["primary"],
+            hover_color=COLORS["secondary"],
+            width=8
         )
-        title_label.pack()
+        back_btn.pack(side=tk.LEFT, padx=10)
         
-        # Scrollable canvas for entries
-        canvas_frame = tk.Frame(self.history_frame)
-        canvas_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        # Title in the navigation bar
+        title_label = tk.Label(
+            nav_bar, 
+            text="Journal History",
+            font=("Helvetica", 16, "bold"),
+            bg=COLORS["primary"],
+            fg="white",
+        )
+        title_label.pack(side=tk.LEFT, expand=True)
         
-        self.canvas = tk.Canvas(canvas_frame, bg="#f0f0f0")
+        # Content area
+        content_frame = ModernFrame(self.history_frame, bg=COLORS["light"], padx=30, pady=20)
+        content_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Scrollable container for journal entries
+        self.entries_container = ModernFrame(content_frame, bg=COLORS["light"], pady=0)
+        self.entries_container.pack(fill=tk.BOTH, expand=True)
+        
+        # Canvas for scrolling
+        canvas_frame = tk.Frame(self.entries_container, bg=COLORS["light"])
+        canvas_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.canvas = tk.Canvas(
+            canvas_frame, 
+            bg=COLORS["light"],
+            bd=0,
+            highlightthickness=0
+        )
         scrollbar = ttk.Scrollbar(canvas_frame, orient="vertical", command=self.canvas.yview)
-        self.scrollable_frame = tk.Frame(self.canvas, bg="#f0f0f0")
+        self.scrollable_frame = tk.Frame(self.canvas, bg=COLORS["light"])
         
         self.scrollable_frame.bind(
             "<Configure>",
@@ -308,52 +563,74 @@ class EmotionalJournalApp:
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # Back button
-        back_frame = tk.Frame(self.history_frame, bg="#f0f0f0", pady=10)
-        back_frame.pack()
-        
-        back_button = tk.Button(
-            back_frame,
-            text="Back to Main",
-            font=("Helvetica", 10),
-            command=self.show_main_screen,
-            width=15
-        )
-        back_button.pack()
+        # Mouse wheel scrolling
+        self.canvas.bind_all("<MouseWheel>", lambda event: self.canvas.yview_scroll(int(-1*(event.delta/120)), "units"))
     
     def setup_playback_screen(self):
-        # Title
-        self.playback_title = tk.Label(
-            self.playback_frame, 
-            text="Playing Journal Entry",
-            font=("Helvetica", 18, "bold"),
-            bg="#f0f0f0",
-            pady=10
+        # Top navigation bar with title and back button
+        nav_bar = ModernFrame(self.playback_frame, bg=COLORS["primary"], pady=10)
+        nav_bar.pack(fill=tk.X)
+        
+        back_btn = ModernButton(
+            nav_bar,
+            text="← Back",
+            command=self.show_history_screen,
+            bg=COLORS["primary"],
+            hover_color=COLORS["secondary"],
+            width=8
         )
-        self.playback_title.pack()
+        back_btn.pack(side=tk.LEFT, padx=10)
+        
+        # Title in the navigation bar
+        self.playback_title = tk.Label(
+            nav_bar, 
+            text="Playing Journal Entry",
+            font=("Helvetica", 16, "bold"),
+            bg=COLORS["primary"],
+            fg="white",
+        )
+        self.playback_title.pack(side=tk.LEFT, expand=True)
+        
+        # Content area
+        content_frame = ModernFrame(self.playback_frame, bg=COLORS["light"], padx=30, pady=20)
+        content_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Card with info
+        info_card = ModernFrame(
+            content_frame, 
+            bg=COLORS["light_accent"], 
+            has_shadow=True,
+            padx=30,
+            pady=30
+        )
+        info_card.pack(fill=tk.BOTH, expand=True)
+        
+        # Video playing icon
+        video_icon = tk.Canvas(info_card, width=80, height=80, bg=COLORS["light_accent"], highlightthickness=0)
+        video_icon.create_oval(10, 10, 70, 70, fill=COLORS["accent"], outline="")
+        video_icon.create_polygon(30, 25, 30, 55, 60, 40, fill="white")
+        video_icon.pack(pady=20)
         
         # Message
         message = tk.Label(
-            self.playback_frame,
-            text="Video is playing in your default video player.",
-            font=("Helvetica", 12),
-            bg="#f0f0f0",
+            info_card,
+            text="Your video is playing in your default video player",
+            font=("Helvetica", 14),
+            bg=COLORS["light_accent"],
+            fg=COLORS["dark"],
             pady=20
         )
         message.pack()
         
-        # Back button
-        back_frame = tk.Frame(self.playback_frame, bg="#f0f0f0", pady=10)
-        back_frame.pack()
-        
-        back_button = tk.Button(
-            back_frame,
-            text="Back to History",
+        note = tk.Label(
+            info_card,
+            text="When you're done watching, you can close the player and return here.",
             font=("Helvetica", 10),
-            command=self.show_history_screen,
-            width=15
+            bg=COLORS["light_accent"],
+            fg="#666666",
+            pady=10
         )
-        back_button.pack()
+        note.pack()
     
     # Recording functions
     def toggle_recording(self):
@@ -362,10 +639,16 @@ class EmotionalJournalApp:
             return
         
         if not self.recording:
+            # Start recording
             self.recording = True
             self.start_button.config(state=tk.DISABLED)
             self.stop_button.config(state=tk.NORMAL)
             self.save_button.config(state=tk.NORMAL)
+            
+            # Update recording indicator
+            self.recording_indicator.itemconfig("indicator", fill=COLORS["error"])
+            self.recording_status.config(text="Recording...", fg=COLORS["error"])
+            self.blink_recording_indicator()
             
             # Setup camera with error handling
             try:
@@ -386,36 +669,115 @@ class EmotionalJournalApp:
                 messagebox.showerror("Camera Error", f"{str(e)}\nMake sure your webcam is connected and not in use by another application.")
                 self.stop_recording()
                 return
+            
+            # Create a new popup window for the camera display
+            self.create_camera_window()
                 
             # Start capture thread
             self.frames = []
             self.capture_thread = threading.Thread(target=self.capture_frames)
             self.capture_thread.daemon = True
             self.capture_thread.start()
+    
+    def blink_recording_indicator(self):
+        """Create a blinking effect for the recording indicator"""
+        if not self.recording:
+            # Stop blinking if not recording
+            self.recording_indicator.itemconfig("indicator", fill="#cccccc")
+            return
             
-            # Start updating preview
-            self.update_preview()
-    
-    def capture_frames(self):
-        """Capture frames from webcam and store them."""
-        frame_count = 0
-        while self.recording and self.cap and self.cap.isOpened():
-            ret, frame = self.cap.read()
-            if ret:
-                # Make a deep copy of the frame to ensure it's properly stored
-                self.frames.append(frame.copy())
-                frame_count += 1
-                if frame_count % 30 == 0:  # Log every ~1 second at 30fps
-                    print(f"Captured {frame_count} frames")
-            else:
-                print("Failed to capture frame")
-                time.sleep(0.1)  # Avoid tight loop if camera is having issues
-            time.sleep(0.03)  # Limit to ~30fps
+        # Toggle between red and darker red
+        current_color = self.recording_indicator.itemcget("indicator", "fill")
+        new_color = "#990000" if current_color == COLORS["error"] else COLORS["error"]
+        self.recording_indicator.itemconfig("indicator", fill=new_color)
         
-        print(f"Capture thread ended with {len(self.frames)} frames collected")
+        # Schedule the next blink
+        self.root.after(500, self.blink_recording_indicator)
+
+    def create_camera_window(self):
+        """Create a separate window for camera display"""
+        self.camera_window = tk.Toplevel(self.root)
+        self.camera_window.title("Camera - Recording")
+        self.camera_window.geometry("800x600")
+        self.camera_window.protocol("WM_DELETE_WINDOW", self.on_camera_window_close)
+        
+        # Create a container for the camera feed
+        camera_container = tk.Frame(self.camera_window, bg=COLORS["dark"])
+        camera_container.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Create the preview label
+        self.preview_label = tk.Label(camera_container, bg=COLORS["dark"])
+        self.preview_label.pack(fill=tk.BOTH, expand=True)
+        
+        # Controls at the bottom
+        control_frame = tk.Frame(self.camera_window, bg=COLORS["light"], pady=10)
+        control_frame.pack(fill=tk.X)
+        
+        # Recording indicator
+        indicator_frame = tk.Frame(control_frame, bg=COLORS["light"])
+        indicator_frame.pack(pady=(0, 10))
+        
+        recording_dot = tk.Canvas(
+            indicator_frame, 
+            width=20, 
+            height=20, 
+            bg=COLORS["light"], 
+            highlightthickness=0
+        )
+        recording_dot.create_oval(2, 2, 18, 18, fill=COLORS["error"], tags="indicator")
+        recording_dot.pack(side=tk.LEFT, padx=(0, 10))
+        
+        recording_text = tk.Label(
+            indicator_frame,
+            text="RECORDING",
+            font=("Helvetica", 10, "bold"),
+            bg=COLORS["light"],
+            fg=COLORS["error"]
+        )
+        recording_text.pack(side=tk.LEFT)
+        
+        # Add buttons for quick access
+        button_frame = tk.Frame(control_frame, bg=COLORS["light"])
+        button_frame.pack(fill=tk.X, padx=20)
+        
+        stop_btn = ModernButton(
+            button_frame,
+            text="■ STOP RECORDING",
+            command=self.stop_recording,
+            bg=COLORS["warning"],
+            hover_color="#F57C00",
+            width=18,
+            font=('Helvetica', 12, 'bold'),
+            pady=12
+        )
+        stop_btn.pack(side=tk.LEFT, padx=10)
+        
+        save_btn = ModernButton(
+            button_frame,
+            text="💾 SAVE JOURNAL",
+            command=self.save_recording,
+            bg=COLORS["success"],
+            hover_color="#388E3C",
+            width=18,
+            font=('Helvetica', 12, 'bold'),
+            pady=12
+        )
+        save_btn.pack(side=tk.RIGHT, padx=10)
+        
+        # Start updating the camera feed
+        self.update_preview()
     
+    def on_camera_window_close(self):
+        """Handle the camera window being closed by the user"""
+        self.stop_recording()
+        if hasattr(self, 'camera_window'):
+            self.camera_window.destroy()
+            
     def update_preview(self):
-        """Update the preview image in the UI."""
+        """Update the preview image in the camera window"""
+        if not hasattr(self, 'camera_window') or not self.camera_window.winfo_exists():
+            return
+            
         if self.recording and self.cap and self.cap.isOpened():
             try:
                 ret, frame = self.cap.read()
@@ -424,24 +786,33 @@ class EmotionalJournalApp:
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     img = PIL.Image.fromarray(frame)
                     
-                    # Resize to fit the window
-                    width = min(self.preview_label.winfo_width(), 640)
-                    # Handle the initial case where width might be 1
-                    if width < 10:  # Use default size if widget not properly sized yet
+                    # Get the current size of the preview label
+                    width = self.preview_label.winfo_width()
+                    height = self.preview_label.winfo_height()
+                    
+                    # Use default size if widget not properly sized yet
+                    if width < 10:
                         width = 640
                         height = 480
+                    
+                    # Maintain aspect ratio
+                    img_ratio = frame.shape[1] / frame.shape[0]
+                    if width / height > img_ratio:
+                        new_width = int(height * img_ratio)
+                        new_height = height
                     else:
-                        ratio = width / frame.shape[1]
-                        height = int(frame.shape[0] * ratio)
-                        
-                    img = img.resize((width, height), PIL.Image.LANCZOS)
+                        new_width = width
+                        new_height = int(width / img_ratio)
+                    
+                    # Resize the image
+                    img = img.resize((new_width, new_height), PIL.Image.LANCZOS)
                     
                     # Keep a reference to avoid garbage collection
                     self.photo = PIL.ImageTk.PhotoImage(image=img)
                     self.preview_label.config(image=self.photo)
                     
                     # Schedule the next update
-                    self.root.after(30, self.update_preview)
+                    self.camera_window.after(30, self.update_preview)
                     return
             except Exception as e:
                 print(f"Camera preview error: {str(e)}")
@@ -449,7 +820,7 @@ class EmotionalJournalApp:
         # If we get here, there was a problem
         print("Stopping recording due to preview issue")
         self.stop_recording()
-    
+
     def stop_recording(self):
         self.recording = False
         
@@ -457,8 +828,15 @@ class EmotionalJournalApp:
             self.cap.release()
             self.cap = None
         
+        # Close camera window if open
+        if hasattr(self, 'camera_window') and self.camera_window.winfo_exists():
+            self.camera_window.destroy()
+        
+        # Update UI
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
+        self.recording_indicator.itemconfig("indicator", fill="#cccccc")
+        self.recording_status.config(text="Stopped", fg="#666666")
     
     def save_recording(self):
         """Save recorded frames to a video file."""
@@ -520,6 +898,13 @@ class EmotionalJournalApp:
     def save_complete(self, progress_window, saved_path):
         """Handle successful video save."""
         progress_window.destroy()
+        # Update recording indicator
+        self.recording_indicator.itemconfig("indicator", fill="#4CAF50")  # Green for success
+        self.recording_status.config(text="Saved", fg=COLORS["success"])
+        # Reset after 2 seconds
+        self.root.after(2000, lambda: self.recording_status.config(text="Not Recording", fg="#666666"))
+        self.root.after(2000, lambda: self.recording_indicator.itemconfig("indicator", fill="#cccccc"))
+        
         messagebox.showinfo("Success", f"Journal entry saved successfully!\nPath: {saved_path}")
         self.show_playback_screen(saved_path)
     
@@ -541,14 +926,46 @@ class EmotionalJournalApp:
         video_files = [f for f in os.listdir(videos_dir) if f.endswith('.mp4')]
         
         if not video_files:
+            empty_state = ModernFrame(self.scrollable_frame, bg=COLORS["light"], pady=40)
+            empty_state.pack(fill=tk.X)
+            
+            # Placeholder icon
+            icon_canvas = tk.Canvas(empty_state, width=80, height=80, bg=COLORS["light"], highlightthickness=0)
+            icon_canvas.create_rectangle(20, 20, 60, 60, fill=COLORS["light_accent"], outline="")
+            icon_canvas.create_line(30, 35, 50, 35, fill=COLORS["dark"], width=2)
+            icon_canvas.create_line(30, 45, 50, 45, fill=COLORS["dark"], width=2)
+            icon_canvas.pack()
+            
             no_entries = tk.Label(
-                self.scrollable_frame,
-                text="No journal entries found. Record your first entry!",
-                font=("Helvetica", 12),
-                bg="#f0f0f0",
-                pady=20
+                empty_state,
+                text="No journal entries found yet",
+                font=("Helvetica", 14, "bold"),
+                bg=COLORS["light"],
+                fg=COLORS["dark"],
+                pady=10
             )
             no_entries.pack()
+            
+            suggestion = tk.Label(
+                empty_state,
+                text="Record your first entry to see it here",
+                font=("Helvetica", 12),
+                bg=COLORS["light"],
+                fg="#666666",
+                pady=5
+            )
+            suggestion.pack()
+            
+            record_btn = ModernButton(
+                empty_state,
+                text="Record a New Entry",
+                command=self.show_record_screen,
+                bg=COLORS["primary"],
+                hover_color=COLORS["secondary"],
+                width=20
+            )
+            record_btn.pack(pady=20)
+            
             return
         
         # Sort files by date (newest first)
@@ -593,71 +1010,99 @@ class EmotionalJournalApp:
             emotion = "Not specified"
             journal_content = ""
         
-        # Create entry widget
-        entry_frame = tk.Frame(self.scrollable_frame, bg="#f5f5f5", 
-                              bd=1, relief=tk.SOLID, padx=10, pady=10)
-        entry_frame.pack(fill=tk.X, pady=5, padx=10)
+        # Create entry widget with modern card design
+        entry_card = ModernFrame(
+            self.scrollable_frame,
+            bg="white",
+            has_shadow=True,
+            padx=20,
+            pady=20
+        )
+        entry_card.pack(fill=tk.X, pady=10, padx=10)
         
-        # Header
+        # Header with emotional indicator
+        header_frame = tk.Frame(entry_card, bg="white")
+        header_frame.pack(fill=tk.X)
+        
+        # Colored emotion indicator
+        emotion_color = COLORS["primary"]  # Default color
+        if emotion.lower() == "happy":
+            emotion_color = "#4CAF50"  # Green for happy
+        elif emotion.lower() == "sad":
+            emotion_color = "#2196F3"  # Blue for sad
+        elif emotion.lower() == "anxious":
+            emotion_color = "#FF9800"  # Orange for anxious
+        elif emotion.lower() == "angry":
+            emotion_color = "#F44336"  # Red for angry
+        
+        emotion_indicator = tk.Frame(header_frame, bg=emotion_color, width=4, height=24)
+        emotion_indicator.pack(side=tk.LEFT, padx=(0, 15))
+        
         title_label = tk.Label(
-            entry_frame, 
+            header_frame, 
             text=title,
-            font=("Helvetica", 14, "bold"),
-            bg="#f5f5f5",
+            font=("Helvetica", 16, "bold"),
+            bg="white",
+            fg=COLORS["dark"],
             anchor="w"
         )
-        title_label.pack(fill=tk.X)
+        title_label.pack(side=tk.LEFT, fill=tk.X)
         
+        # Date in subtle styling
         date_label = tk.Label(
-            entry_frame, 
+            entry_card, 
             text=date,
             font=("Helvetica", 10, "italic"),
+            bg="white",
             fg="#666666",
-            bg="#f5f5f5",
             anchor="w"
         )
-        date_label.pack(fill=tk.X)
+        date_label.pack(fill=tk.X, pady=(5, 10))
         
-        emotion_label = tk.Label(
-            entry_frame, 
+        # Emotion tag with color
+        emotion_tag = tk.Label(
+            entry_card,
             text=f"Feeling: {emotion}",
             font=("Helvetica", 10),
-            bg="#e6f3ff",
-            fg="#333333",
-            bd=1,
-            relief=tk.SOLID,
-            padx=5,
-            pady=2,
-            anchor="w"
+            bg=emotion_color,
+            fg="white",
+            padx=8,
+            pady=3
         )
-        emotion_label.pack(anchor="w", pady=(5, 10))
+        emotion_tag.pack(side=tk.LEFT, anchor="w", pady=(0, 15))
+        
+        # Main content area
+        content_frame = tk.Frame(entry_card, bg="white")
+        content_frame.pack(fill=tk.X, pady=10)
         
         # Content preview (if available)
         if journal_content:
-            # Limit to 100 chars
-            preview = journal_content[:100] + ("..." if len(journal_content) > 100 else "")
+            # Limit to 150 chars
+            preview = journal_content[:150] + ("..." if len(journal_content) > 150 else "")
             content_label = tk.Label(
-                entry_frame, 
+                content_frame, 
                 text=preview,
-                font=("Helvetica", 10),
-                bg="#f5f5f5",
+                font=("Helvetica", 11),
+                bg="white",
+                fg=COLORS["dark"],
                 anchor="w",
                 justify=tk.LEFT,
-                wraplength=500
+                wraplength=600
             )
-            content_label.pack(fill=tk.X, pady=(0, 10))
+            content_label.pack(fill=tk.X)
         
-        # Play button
-        play_button = tk.Button(
-            entry_frame,
+        # Action buttons
+        button_frame = tk.Frame(entry_card, bg="white")
+        button_frame.pack(fill=tk.X, pady=(15, 0))
+        
+        play_button = ModernButton(
+            button_frame,
             text="Play Video",
-            font=("Helvetica", 10),
             command=lambda path=video_path: self.show_playback_screen(path),
-            bg="#2196F3",
-            fg="white",
-            width=15
+            bg=COLORS["primary"],
+            hover_color=COLORS["secondary"]
         )
-        play_button.pack(pady=5)
+        play_button.pack(side=tk.RIGHT)
 
 def main():
     try:
